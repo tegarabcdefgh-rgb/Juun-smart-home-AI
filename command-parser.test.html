@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JUUN Command Parser Tests</title>
+<style>
+body{font:15px/1.5 system-ui,sans-serif;max-width:900px;margin:32px auto;padding:0 18px;background:#101820;color:#eef4f5}h1{font-size:23px}#summary{padding:12px;border:1px solid #36535a;margin:16px 0}li{padding:6px 0}.pass{color:#8be0ad}.fail{color:#ff9292}code{color:#a9e3ee}
+</style>
+</head>
+<body>
+<h1>JUUN command parser tests</h1>
+<div id="summary">Running tests...</div>
+<ol id="results"></ol>
+<script src="command-parser.js"></script>
+<script>
+(async function(){
+    const parser=window.JuunCommandParser;
+    const results=document.getElementById('results');
+    const cases=[
+        ['single ON',()=>{const p=parser.parseCommand('Nyalakan televisi.');return p.type==='command'&&p.actions.length===1&&p.actions[0].led===1&&p.actions[0].state==='ON'}],
+        ['single OFF',()=>{const p=parser.parseCommand('Matikan AC.');return p.type==='command'&&p.actions.length===1&&p.actions[0].led===2&&p.actions[0].state==='OFF'}],
+        ['opposite actions',()=>{const p=parser.parseCommand('Matikan AC dan hidupkan televisi.');const states=Object.fromEntries(p.actions.map(a=>[a.led,a.state]));return p.type==='command'&&states[2]==='OFF'&&states[1]==='ON'}],
+        ['three devices, same action',()=>{const p=parser.parseCommand('Matikan televisi, komputer, dan AC.');return p.actions.length===3&&p.actions.every(a=>a.state==='OFF')}],
+        ['three or more, mixed actions',()=>{const p=parser.parseCommand('Matikan AC, komputer, dan kipas angin, tetapi hidupkan televisi, lampu, dan rice cooker.');const states=Object.fromEntries(p.actions.map(a=>[a.led,a.state]));return p.actions.length===6&&states[2]==='OFF'&&states[6]==='OFF'&&states[4]==='OFF'&&states[1]==='ON'&&states[3]==='ON'&&states[5]==='ON'}],
+        ['actions preserve the spoken device order',()=>{const p=parser.parseCommand('Nyalakan AC dan kipas angin.');return p.actions.length===2&&p.actions[0].led===2&&p.actions[1].led===4}],
+        ['all devices uses bulk action',()=>{const p=parser.parseCommand('Matikan semua perangkat.');return p.actions.length===6&&p.bulkAction==='OFF'}],
+        ['negated action is skipped',()=>{const p=parser.parseCommand('Jangan hidupkan AC, cukup matikan televisi.');return p.actions.length===1&&p.actions[0].led===1&&p.actions[0].state==='OFF'}],
+        ['spacing, punctuation, capitalization, and spoken variant',()=>{const p=parser.parseCommand('  MATIkan ac,   lalu NYALAIN TV!');const states=Object.fromEntries(p.actions.map(a=>[a.led,a.state]));return p.type==='command'&&states[2]==='OFF'&&states[1]==='ON'}],
+        ['multiple negated actions remain inactive',()=>parser.parseCommand('Belum hidupkan AC, bukan hidupkan televisi.').type==='negated'],
+        ['unknown device asks clarification',()=>parser.parseCommand('Matikan pemanas.').type==='clarify'],
+        ['ordinary conversation does not control GPIO',()=>parser.parseCommand('Hai Juun, apa kabar?').type==='none'],
+        ['sensor question does not control GPIO',()=>parser.parseCommand('Berapa suhu saat ini?').type==='none'],
+        ['heat is classified as a suggestion, not a sensor command',()=>parser.classifyIntent('Panas nih').type==='SUGGESTION'],
+        ['unknown device has a clarification intent',()=>parser.classifyIntent('Matikan pemanas.').type==='CLARIFICATION'],
+        ['identity question is separate from introduction',()=>parser.classifyIntent('Juun siapa?').type==='IDENTITY_QUESTION'],
+        ['user identity uses configured name intent',()=>parser.classifyIntent('Kamu tahu aku siapa?').type==='USER_IDENTITY'],
+        ['self introduction has a dedicated intent',()=>parser.classifyIntent('Perkenalan dirimu dong.').type==='SELF_INTRODUCTION'],
+        ['specific command overrides a previous suggestion',()=>{const p=parser.parseCommand('Nyalakan AC saja.');return p.type==='command'&&p.actions.length===1&&p.actions[0].led===2&&p.actions[0].state==='ON'}]
+    ];
+    let passed=0;
+    for(const [name,test] of cases){
+        const item=document.createElement('li');
+        try{if(!test())throw new Error('Assertion failed');item.textContent='PASS: '+name;item.className='pass';passed++}
+        catch(error){item.textContent='FAIL: '+name+' ('+error.message+')';item.className='fail'}
+        results.appendChild(item);
+    }
+    const mixed=parser.parseCommand('Nyalakan televisi dan AC.');
+    const partial=await parser.executeActions(mixed.actions,{
+        sendAction:async action=>{if(action.led===2)throw new Error('mock HTTP 500');return {ok:true,state:'ON'}},
+        readStates:async()=>({1:'ON',2:'OFF'})
+    });
+    const apiItem=document.createElement('li');
+    if(partial[0].success&&!partial[1].success){apiItem.textContent='PASS: API failure is reported per device';apiItem.className='pass';passed++}
+    else{apiItem.textContent='FAIL: API failure is reported per device';apiItem.className='fail'}
+    results.appendChild(apiItem);
+    const unverified=await parser.executeActions([{led:1,name:'Televisi',state:'ON'}],{sendAction:async()=>({ok:true,state:'ON'}),readStates:async()=>{throw new Error('mock status endpoint unavailable')}});
+    const unverifiedItem=document.createElement('li');
+    if(unverified[0].accepted&&!unverified[0].success){unverifiedItem.textContent='PASS: unverified hardware state is not reported successful';unverifiedItem.className='pass';passed++}
+    else{unverifiedItem.textContent='FAIL: unverified hardware state is not reported successful';unverifiedItem.className='fail'}
+    results.appendChild(unverifiedItem);
+    const bulk=parser.parseCommand('Hidupkan semua perangkat.');
+    let bulkCalls=0;
+    const bulkResult=await parser.executeActions(bulk.actions,{bulkAction:bulk.bulkAction,sendAll:async state=>{bulkCalls++;return {ok:true,state}},sendAction:async()=>{throw new Error('bulk should be used')},readStates:async()=>Object.fromEntries(bulk.actions.map(a=>[a.led,'ON']))});
+    const bulkItem=document.createElement('li');
+    if(bulkCalls===1&&bulkResult.every(result=>result.success)){bulkItem.textContent='PASS: bulk action and status verification';bulkItem.className='pass';passed++}
+    else{bulkItem.textContent='FAIL: bulk action and status verification';bulkItem.className='fail'}
+    results.appendChild(bulkItem);
+    const suggested=parser.parseCommand('Nyalakan AC dan kipas angin.').actions;
+    const context=parser.createSuggestionContext(suggested,'heat',1000);
+    const followUpChecks=[
+        ['explicit follow-up accepts the pending two-device suggestion',parser.resolveFollowUp('Ya sudah, coba hidupkan.',context,2000).type==='accept'&&parser.resolveFollowUp('Ya sudah, coba hidupkan.',context,2000).actions.length===2],
+        ['uncertain response does not accept',parser.resolveFollowUp('Hmm, mungkin.',context,2000).type==='uncertain'],
+        ['cancellation clears pending action',parser.resolveFollowUp('Jangan jadi deh.',context,2000).type==='cancel'],
+        ['acceptance with no context asks for clarification',parser.resolveFollowUp('Oke, lakukan.',null,2000).type==='clarify'],
+        ['expired context cannot trigger devices',parser.resolveFollowUp('Boleh, nyalakan.',context,123001).type==='clarify']
+    ];
+    for(const [name,passedCheck] of followUpChecks){const item=document.createElement('li');if(passedCheck){item.textContent='PASS: '+name;item.className='pass';passed++}else{item.textContent='FAIL: '+name;item.className='fail'}results.appendChild(item)}
+    document.getElementById('summary').textContent=`${passed}/${cases.length+7} tests passed. No hardware or network calls were made.`;
+    document.getElementById('summary').className=passed===cases.length+7?'pass':'fail';
+})();
+</script>
+</body>
+</html>

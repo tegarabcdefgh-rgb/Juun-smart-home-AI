@@ -1,0 +1,636 @@
+{
+  "name": "Juun MCP Server",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "juun-mcp",
+        "instructions": "Server MCP untuk smart home Juun berbasis ESP32. Gunakan baca_sensor untuk suhu/kelembapan/jarak, kontrol_led untuk satu LED (1-6), kontrol_semua_led untuk semua LED, dan status_perangkat untuk status keenam LED. Jika respons berisi mode \"DEMO\", sampaikan ke pengguna bahwa data tersebut simulasi, bukan dari perangkat nyata."
+      },
+      "id": "322dfc4f-0ecb-4b93-bb29-c9aecce26576",
+      "name": "Juun MCP Server Trigger",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        128,
+        112
+      ],
+      "webhookId": "c5a84df8-2bfd-482b-a4d0-f1d268e7336f"
+    },
+    {
+      "parameters": {
+        "description": "Membaca sensor ESP32 dan mengembalikan suhu (°C), kelembapan (%), dan jarak (cm). Tidak memerlukan parameter. Field \"mode\" bernilai DEMO jika data masih simulasi.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $workflow.id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "baca_sensor",
+            "led_number": 0,
+            "state": ""
+          },
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "led_number",
+              "displayName": "led_number",
+              "type": "number",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "e976de9e-8a42-4d1e-9d3d-73ab3e8f6472",
+      "name": "baca_sensor",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "description": "Menyalakan atau mematikan satu LED pada ESP32. Parameter: led_number (angka 1 sampai 6) dan state (\"ON\" atau \"OFF\").",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $workflow.id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "kontrol_led",
+            "led_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('led_number', 'Nomor LED yang dikontrol, bilangan bulat 1 sampai 6', 'number') }}",
+            "state": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('state', 'Status LED yang diinginkan: ON atau OFF') }}"
+          },
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "led_number",
+              "displayName": "led_number",
+              "type": "number",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "9488a50d-6b1d-44bc-996c-cacf35234917",
+      "name": "kontrol_led",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        128,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "description": "Menyalakan atau mematikan semua enam LED pada ESP32 sekaligus. Parameter: state (\"ON\" untuk menyalakan semua, \"OFF\" untuk mematikan semua).",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $workflow.id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "kontrol_semua_led",
+            "led_number": 0,
+            "state": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('state', 'Status untuk semua LED: ON atau OFF') }}"
+          },
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "led_number",
+              "displayName": "led_number",
+              "type": "number",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "3d1d8360-7120-4f8f-8c5d-fb58c7b21855",
+      "name": "kontrol_semua_led",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "description": "Mengembalikan status ON/OFF dari keenam LED (LED 1 sampai 6) pada ESP32. Tidak memerlukan parameter. Field \"mode\" bernilai DEMO jika data masih simulasi.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $workflow.id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "status_perangkat",
+            "led_number": 0,
+            "state": ""
+          },
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "led_number",
+              "displayName": "led_number",
+              "type": "number",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "baa51e77-95b2-407d-8660-1b90aaa68626",
+      "name": "status_perangkat",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "operation"
+            },
+            {
+              "name": "led_number",
+              "type": "number"
+            },
+            {
+              "name": "state"
+            }
+          ]
+        }
+      },
+      "id": "e1e875ab-056f-43c8-8ab2-1f666590da91",
+      "name": "Tool Dipanggil",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-sensor",
+              "name": "url_baca_sensor",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "cfg-led",
+              "name": "url_kontrol_led",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "cfg-all",
+              "name": "url_kontrol_semua_led",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "cfg-status",
+              "name": "url_status_perangkat",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "cfg-method",
+              "name": "http_method",
+              "type": "string",
+              "value": "GET"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "0469dbcb-1bd0-413f-bb66-726436cdd990",
+      "name": "Konfigurasi ESP32",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const d = $json;\nconst op = String(d.operation || '').trim();\nconst state = String(d.state || '').trim().toUpperCase();\nconst led = Number(d.led_number);\nconst urls = {\n  baca_sensor: d.url_baca_sensor,\n  kontrol_led: d.url_kontrol_led,\n  kontrol_semua_led: d.url_kontrol_semua_led,\n  status_perangkat: d.url_status_perangkat,\n};\nif (!(op in urls)) {\n  return { json: { mode: 'ERROR', operation: op, ok: false, pesan: 'Operasi tidak dikenal: ' + op } };\n}\nif ((op === 'kontrol_led' || op === 'kontrol_semua_led') && state !== 'ON' && state !== 'OFF') {\n  return { json: { mode: 'ERROR', operation: op, ok: false, pesan: 'Parameter state harus ON atau OFF.' } };\n}\nif (op === 'kontrol_led' && !(Number.isInteger(led) && led >= 1 && led <= 6)) {\n  return { json: { mode: 'ERROR', operation: op, ok: false, pesan: 'Parameter led_number harus bilangan bulat 1 sampai 6.' } };\n}\nconst query = {};\nif (op === 'kontrol_led') { query.led = led; query.state = state; }\nif (op === 'kontrol_semua_led') { query.state = state; }\nconst url = String(urls[op] || '').trim();\nif (url) {\n  return { json: { mode: 'LIVE', operation: op, url: url, method: String(d.http_method || 'GET').toUpperCase(), query: query } };\n}\n// DEMO: endpoint ESP32 belum dikonfigurasi -> respons simulasi\nconst catatan = 'DEMO - data simulasi, endpoint ESP32 belum dikonfigurasi. Bukan data perangkat nyata.';\nlet data = {};\nif (op === 'baca_sensor') {\n  data = { suhu_c: 28.5, kelembapan_persen: 65, jarak_cm: 42 };\n} else if (op === 'kontrol_led') {\n  data = { led: led, state: state, berhasil: true };\n} else if (op === 'kontrol_semua_led') {\n  data = { semua_led: state, berhasil: true };\n} else {\n  data = { led_1: 'OFF', led_2: 'OFF', led_3: 'OFF', led_4: 'OFF', led_5: 'OFF', led_6: 'OFF' };\n}\nreturn { json: { mode: 'DEMO', operation: op, ok: true, catatan: catatan, data: data } };"
+      },
+      "id": "62ef0b46-0062-4763-8df5-cb972be3b3ac",
+      "name": "Validasi & Siapkan Permintaan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-live",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "LIVE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8a74b42a-159d-4910-a43e-ac2013a3634f",
+      "name": "Endpoint ESP32 Tersedia?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "method": "={{ $json.method }}",
+        "url": "={{ $json.url }}",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify($json.query) }}",
+        "options": {
+          "timeout": 8000
+        }
+      },
+      "id": "e8480cc8-accc-45d9-a659-a5016c883e6c",
+      "name": "Panggil ESP32",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        800,
+        848
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f-mode",
+              "name": "mode",
+              "type": "string",
+              "value": "LIVE"
+            },
+            {
+              "id": "f-op",
+              "name": "operation",
+              "type": "string",
+              "value": "={{ $('Validasi & Siapkan Permintaan').item.json.operation }}"
+            },
+            {
+              "id": "f-ok",
+              "name": "ok",
+              "type": "boolean",
+              "value": true
+            },
+            {
+              "id": "f-data",
+              "name": "data",
+              "type": "object",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "49376c20-513c-496c-8459-f398dd3856fe",
+      "name": "Format Respons ESP32",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e-mode",
+              "name": "mode",
+              "type": "string",
+              "value": "LIVE"
+            },
+            {
+              "id": "e-op",
+              "name": "operation",
+              "type": "string",
+              "value": "={{ $('Validasi & Siapkan Permintaan').item.json.operation }}"
+            },
+            {
+              "id": "e-ok",
+              "name": "ok",
+              "type": "boolean",
+              "value": false
+            },
+            {
+              "id": "e-msg",
+              "name": "pesan",
+              "type": "string",
+              "value": "=ESP32 tidak dapat dihubungi: {{ $json.error?.message || $json.error || 'error tidak diketahui' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6a101e20-bd6f-4d1d-916e-93db28734789",
+      "name": "ESP32 Gagal Dihubungi",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        944
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "43eead89-9e23-42f2-83c9-31ce7eca21d6",
+      "name": "Kembalikan Hasil DEMO/Error",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        912,
+        432
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "baca_sensor": {
+      "ai_tool": [
+        [
+          {
+            "node": "Juun MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "kontrol_led": {
+      "ai_tool": [
+        [
+          {
+            "node": "Juun MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "kontrol_semua_led": {
+      "ai_tool": [
+        [
+          {
+            "node": "Juun MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "status_perangkat": {
+      "ai_tool": [
+        [
+          {
+            "node": "Juun MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Dipanggil": {
+      "main": [
+        [
+          {
+            "node": "Konfigurasi ESP32",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konfigurasi ESP32": {
+      "main": [
+        [
+          {
+            "node": "Validasi & Siapkan Permintaan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validasi & Siapkan Permintaan": {
+      "main": [
+        [
+          {
+            "node": "Endpoint ESP32 Tersedia?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Endpoint ESP32 Tersedia?": {
+      "main": [
+        [
+          {
+            "node": "Panggil ESP32",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Kembalikan Hasil DEMO/Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Panggil ESP32": {
+      "main": [
+        [
+          {
+            "node": "Format Respons ESP32",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ESP32 Gagal Dihubungi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "341a8c9c-f2c4-42b4-89fe-00d623e81add",
+  "meta": {
+    "instanceId": "2f9d7c30b69d24278744e6b77952b41a8438b7ea18f6f39d16043c4dbc1b1975"
+  },
+  "nodeGroups": [
+    {
+      "id": "49c8b1d7-cc3f-4702-9494-502cce26b433",
+      "name": "Validasi permintaan tool",
+      "nodeIds": [
+        "0469dbcb-1bd0-413f-bb66-726436cdd990",
+        "62ef0b46-0062-4763-8df5-cb972be3b3ac",
+        "8a74b42a-159d-4910-a43e-ac2013a3634f"
+      ],
+      "description": "Membaca URL endpoint yang dikonfigurasi, memvalidasi nomor LED dan status, lalu menyiapkan respons DEMO jika endpoint kosong"
+    },
+    {
+      "id": "aab056f6-1071-474a-b151-9efa1403d736",
+      "name": "Hubungi perangkat ESP32",
+      "nodeIds": [
+        "e8480cc8-accc-45d9-a659-a5016c883e6c",
+        "49376c20-513c-496c-8459-f398dd3856fe",
+        "6a101e20-bd6f-4d1d-916e-93db28734789"
+      ],
+      "description": "Mengirim permintaan ke endpoint ESP32 yang dikonfigurasi dan merapikan jawaban atau pesan gagal untuk AI"
+    }
+  ],
+  "id": "7Vyfx43KZLLxj2GR",
+  "tags": []
+}

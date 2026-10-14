@@ -1,0 +1,154 @@
+{
+  "name": "Juun — Smart Home AI Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "juun-assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a2b760a3-766e-4119-bb33-d541f70744e0",
+      "name": "Dashboard Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "07ff1e01-acee-448e-b4db-134b4cea033f"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Pesan pengguna: {{ $json.body.message }}\n\nKonteks: source={{ $json.body.source }}, requestType={{ $json.body.requestType }}, timestamp={{ $json.body.timestamp }}\ndeviceMap dari dashboard: {{ JSON.stringify($json.body.deviceMap || {}) }}",
+        "options": {
+          "systemMessage": "\nKamu adalah Juun, asisten smart home berbasis AI yang berkomunikasi dalam bahasa Indonesia.\n\nKamu memiliki akses ke MCP tools berikut:\n- baca_sensor: membaca suhu, kelembapan, dan jarak.\n- kontrol_led: menyalakan atau mematikan satu LED.\n- kontrol_semua_led: menyalakan atau mematikan keenam LED.\n- status_perangkat: memeriksa status keenam perangkat.\n\nATURAN WAJIB:\n1. Jika pengguna menanyakan suhu, kelembapan, jarak, atau kondisi sensor, panggil tool baca_sensor. Jangan mengarang nilai sensor.\n2. Jika pengguna meminta menyalakan atau mematikan perangkat tertentu, panggil kontrol_led dengan parameter yang diminta.\n3. Pemetaan perangkat:\n   LED 1 = Televisi, GPIO 13.\n   LED 2 = AC, GPIO 14.\n   LED 3 = Lampu ruangan, GPIO 16.\n   LED 4 = Kipas angin, GPIO 19.\n   LED 5 = Rice cooker, GPIO 21.\n   LED 6 = Komputer, GPIO 22.\n4. Jika pengguna meminta semua perangkat dinyalakan atau dimatikan, panggil kontrol_semua_led.\n5. Jika pengguna menanyakan perangkat yang sedang menyala, panggil status_perangkat.\n6. Sampaikan hasil berdasarkan respons tool. Jangan mengklaim perangkat berhasil berubah jika tool gagal.\n7. Jika tool gagal, jelaskan kegagalannya dengan jujur.\n8. Gunakan bahasa Indonesia yang natural dan ringkas. Perkenalkan dirimu sebagai Juun jika diminta.\n",
+          "maxIterations": 6,
+          "enableStreaming": false
+        }
+      },
+      "id": "bc30d232-1998-4268-a49b-21e895be95fb",
+      "name": "Juun AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "d58d28d3-0468-4cd2-b183-c79633055b5d",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        336
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "i3tqDcDt1kG4dt52",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://localhost:5678/mcp/juun-mcp",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "198694d7-abf3-48b3-ace8-699041b7d196",
+      "name": "juun_mcp_tools",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        368,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ reply: $json.output, source: $(\"Dashboard Webhook\").item.json.body.source || null, requestType: $(\"Dashboard Webhook\").item.json.body.requestType || null, timestamp: $now.toISO() }) }}",
+        "options": {}
+      },
+      "id": "513afee6-1478-44c5-a38d-81d1eba7c0b1",
+      "name": "Respond JSON",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        576,
+        112
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Dashboard Webhook": {
+      "main": [
+        [
+          {
+            "node": "Juun AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juun AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Juun AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "juun_mcp_tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "Juun AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6f3d6319-9659-4ec9-92bc-9d5c58ab7d7c",
+  "meta": {
+    "instanceId": "2f9d7c30b69d24278744e6b77952b41a8438b7ea18f6f39d16043c4dbc1b1975",
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "id": "lWuosjIXGzcpb0D2",
+  "tags": []
+}
